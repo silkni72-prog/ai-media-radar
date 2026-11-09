@@ -143,9 +143,10 @@ python -m pytest -q
    - **Secrets**: `ANTHROPIC_API_KEY`(또는 `OPENAI_API_KEY`), `NTFY_DAILY_TOPIC`, `NTFY_WIRED_TOPIC`, `NTFY_ALERT_TOPIC`, 필요 시 `NTFY_TOKEN`, `DATABASE_URL`
    - **Variables**: `LLM_PROVIDER=anthropic`, 실제 발송 시 `NTFY_DRY_RUN=false`, 선택 `LLM_MODEL`, `BRIEFING_PUBLIC_BASE_URL`, `PUBLISH_PAGES`
 2. Actions 탭 → AI x MEDIA RADAR → Run workflow → `sources-check`, `notify-test-daily`로 먼저 확인.
+   `briefing-preview`는 알림 없이 브리핑만 만들고 Pages를 갱신한다.
 3. (선택) 브리핑을 웹으로 열려면 Settings → Pages → Source: GitHub Actions, 변수 `PUBLISH_PAGES=true`,
    `BRIEFING_PUBLIC_BASE_URL=https://<계정>.github.io/<저장소>`. **공개 Pages는 누구나 볼 수 있다.** 비공개 저장소의 Pages는 유료 플랜이 필요하다.
-   Pages는 매번 그날 브리핑으로 교체되므로 이전 날짜 링크는 열리지 않는다(과거본은 Actions 아티팩트에 14일 보관).
+   Pages는 매번 그날 브리핑으로 교체되므로(이미 발송돼 건너뛴 실행은 Pages를 건드리지 않는다) 이전 날짜 링크는 열리지 않는다(과거본은 Actions 아티팩트에 14일 보관).
 
 ## 6. 출처 추가·삭제
 

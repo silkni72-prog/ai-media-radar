@@ -17,7 +17,7 @@ on:
       task:
         description: "실행할 작업"
         type: choice
-        options: [hourly, wired, briefing, sources-check, notify-test-daily]
+        options: [hourly, wired, briefing, briefing-preview, sources-check, notify-test-daily]
         default: hourly
 
 # 모든 작업이 같은 SQLite DB를 쓰므로 한 번에 하나만 실행 (취소하지 않고 대기)
@@ -50,6 +50,7 @@ jobs:
       DATABASE_URL: ${{ secrets.DATABASE_URL }}
     outputs:
       task: ${{ steps.task.outputs.task }}
+      pages: ${{ steps.pagecheck.outputs.pages }}
     steps:
       - uses: actions/checkout@v4
 
@@ -91,6 +92,7 @@ jobs:
               else
                 python -m src.main briefing
               fi ;;
+            briefing-preview) python -m src.main briefing --no-send ;;  # 알림 없이 브리핑 생성·Pages 갱신만
             notify-test-daily) python -m src.main notify-test daily ;;
             *) python -m src.main "${{ steps.task.outputs.task }}" ;;
           esac
@@ -114,8 +116,15 @@ jobs:
           retention-days: 14
           if-no-files-found: ignore
 
+      # 이미 발송돼 건너뛴 실행(09:10 보조 등)은 브리핑 파일이 없다 → 빈 페이지로 덮어쓰지 않도록 확인
+      - name: Pages 대상 확인
+        id: pagecheck
+        if: (steps.task.outputs.task == 'briefing' || steps.task.outputs.task == 'briefing-preview') && vars.PUBLISH_PAGES == 'true'
+        run: |
+          if ls output/briefing-*.html > /dev/null 2>&1; then echo "pages=true" >> "$GITHUB_OUTPUT"; else echo "브리핑 파일 없음 → Pages 배포 생략"; fi
+
       - name: Pages 아티팩트
-        if: steps.task.outputs.task == 'briefing' && vars.PUBLISH_PAGES == 'true'
+        if: steps.pagecheck.outputs.pages == 'true'
         uses: actions/upload-pages-artifact@v3
         with:
           path: output
@@ -125,7 +134,7 @@ jobs:
   # 공개 저장소의 Pages는 누구나 볼 수 있다는 점에 유의.
   publish:
     needs: run
-    if: needs.run.outputs.task == 'briefing' && vars.PUBLISH_PAGES == 'true'
+    if: needs.run.outputs.pages == 'true'
     runs-on: ubuntu-latest
     permissions:
       pages: write
