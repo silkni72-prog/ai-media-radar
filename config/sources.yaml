@@ -1,0 +1,481 @@
+# AI × MEDIA DAILY RADAR — 수집 출처 목록
+#
+# 필드
+#   id            고유 ID (DB에 저장되므로 바꾸지 말 것)
+#   name          표시 이름
+#   group         ai_global | media_global | korea | korea_company | wired
+#   type          rss | arxiv_api | html_list
+#   url           피드/API/목록 페이지 주소
+#   enabled       false면 수집하지 않음
+#   default_category  AI | MEDIA | BOTH  (LLM이 없을 때 분류 힌트)
+#   prefilter     true면 AI·미디어 키워드가 있는 기사만 분석 대상으로 넘김
+#                 (종합지·IT 매체처럼 기사량이 많은 피드에 사용)
+#   max_items     1회 수집 시 최대 기사 수
+#   verified      마지막 접근 확인 결과 (사람이 읽는 메모)
+#
+# 접근 확인일: 2026-11-09 (KST). 결과는 `python -m src.main sources-check`로 다시 확인할 수 있다.
+# 확인되지 않은 경로는 만들어 넣지 않고 enabled: false + 사유로 남겨 둔다.
+
+sources:
+  # ───────────── A. 글로벌 AI 산업·기술 ─────────────
+  - id: openai
+    name: OpenAI News
+    group: ai_global
+    type: rss
+    url: https://openai.com/news/rss.xml
+    enabled: true
+    default_category: AI
+    max_items: 20
+    verified: "200 OK, RSS 1368건(전체 아카이브) — max_items로 최근분만 사용"
+
+  - id: anthropic
+    name: Anthropic News
+    group: ai_global
+    type: html_list
+    url: https://www.anthropic.com/news
+    enabled: true
+    default_category: AI
+    max_items: 8
+    html:
+      link_pattern: '^/news/[a-z0-9][a-z0-9\-]+$'
+      exclude_paths: ["/news/announcements", "/news/features", "/news/partnerships", "/news/product", "/news/policy", "/news/societal-impacts"]
+      fetch_detail: true
+    verified: "공식 RSS 없음(/rss.xml, /news/rss.xml 404). robots.txt 'Allow: /' 확인 → 목록 페이지 파싱 + 기사 메타(article:published_time) 사용"
+
+  - id: deepmind
+    name: Google DeepMind Blog
+    group: ai_global
+    type: rss
+    url: https://deepmind.google/blog/rss.xml
+    enabled: true
+    default_category: AI
+    max_items: 20
+    verified: "200 OK, 100건"
+
+  - id: google_ai
+    name: Google Blog — AI
+    group: ai_global
+    type: rss
+    url: https://blog.google/technology/ai/rss/
+    enabled: true
+    default_category: AI
+    max_items: 20
+    verified: "200 OK, 20건 (blog.google/innovation-and-ai/technology/ai/rss/로 리다이렉트)"
+
+  - id: google_research
+    name: Google Research Blog
+    group: ai_global
+    type: rss
+    url: https://research.google/blog/rss/
+    enabled: true
+    default_category: AI
+    max_items: 15
+    verified: "200 OK, 100건"
+
+  - id: nvidia
+    name: NVIDIA Blog
+    group: ai_global
+    type: rss
+    url: https://blogs.nvidia.com/feed/
+    enabled: true
+    default_category: AI
+    max_items: 20
+    verified: "200 OK, 18건"
+
+  - id: huggingface
+    name: Hugging Face Blog
+    group: ai_global
+    type: rss
+    url: https://huggingface.co/blog/feed.xml
+    enabled: true
+    default_category: AI
+    max_items: 15
+    verified: "200 OK, 899건(전체 아카이브)"
+
+  - id: mittr_ai
+    name: MIT Technology Review — AI
+    group: ai_global
+    type: rss
+    url: https://www.technologyreview.com/topic/artificial-intelligence/feed
+    enabled: true
+    default_category: AI
+    max_items: 10
+    verified: "200 OK, 10건"
+
+  - id: techcrunch_ai
+    name: TechCrunch AI
+    group: ai_global
+    type: rss
+    url: https://techcrunch.com/category/artificial-intelligence/feed/
+    enabled: true
+    default_category: AI
+    max_items: 20
+    verified: "200 OK, 20건"
+
+  # ── 실전 AI: 바이브코딩·코딩 에이전트·개발 도구 (2026-11-09 접근 확인) ──
+  - id: simonwillison
+    name: Simon Willison's Weblog
+    group: ai_global
+    type: rss
+    url: https://simonwillison.net/atom/everything/
+    enabled: true
+    default_category: AI
+    max_items: 15
+    prefilter: true
+    verified: "200 OK, Atom 30건 (LLM·코딩 도구 실사용 기록, 일반 글 섞임 → prefilter)"
+
+  - id: latent_space
+    name: Latent Space
+    group: ai_global
+    type: rss
+    url: https://www.latent.space/feed
+    enabled: true
+    default_category: AI
+    max_items: 10
+    verified: "200 OK, 20건 (AI 엔지니어링 뉴스레터·팟캐스트)"
+
+  - id: github_blog_ai
+    name: GitHub Blog (AI & ML)
+    group: ai_global
+    type: rss
+    url: https://github.blog/ai-and-ml/feed/
+    enabled: true
+    default_category: AI
+    max_items: 10
+    verified: "200 OK, 10건 (Copilot·코딩 에이전트)"
+
+  - id: verge_ai
+    name: The Verge AI
+    group: ai_global
+    type: rss
+    url: https://www.theverge.com/rss/ai-artificial-intelligence/index.xml
+    enabled: true
+    default_category: AI
+    max_items: 10
+    verified: "200 OK, 10건"
+
+  - id: the_decoder
+    name: The Decoder
+    group: ai_global
+    type: rss
+    url: https://the-decoder.com/feed/
+    enabled: true
+    default_category: AI
+    max_items: 10
+    verified: "200 OK, 10건"
+
+  - id: hn_ai
+    name: Hacker News (AI, 100점 이상)
+    group: ai_global
+    type: rss
+    url: https://hnrss.org/newest?q=AI+OR+LLM+OR+Claude+OR+Cursor&points=100
+    enabled: true
+    default_category: AI
+    max_items: 15
+    prefilter: true
+    verified: "200 OK, 20건 (hnrss.org 제3자 RSS 서비스 — 개발자 커뮤니티 반응 지표)"
+
+  - id: arxiv
+    name: arXiv (cs.CL / cs.AI)
+    group: ai_global
+    type: arxiv_api
+    url: "https://export.arxiv.org/api/query?search_query=cat:cs.CL+OR+cat:cs.AI&sortBy=submittedDate&sortOrder=descending&max_results=40"
+    enabled: true
+    default_category: AI
+    max_items: 40
+    prefilter: true
+    verified: "공식 API 200 OK. rss.arxiv.org/rss/cs.CL은 주말·공휴일엔 0건이라 API 사용. arXiv 이용 정책상 요청 간 3초 이상 간격 권장"
+
+  # ───────────── B. 글로벌 언론·미디어 산업 ─────────────
+  - id: niemanlab
+    name: Nieman Journalism Lab
+    group: media_global
+    type: rss
+    url: https://www.niemanlab.org/feed/
+    enabled: true
+    default_category: MEDIA
+    max_items: 20
+    verified: "200 OK, 30건"
+
+  - id: reuters_institute
+    name: Reuters Institute (News)
+    group: media_global
+    type: rss
+    url: https://reutersinstitute.politics.ox.ac.uk/rss/news
+    enabled: true
+    default_category: MEDIA
+    max_items: 10
+    verified: "200 OK, 10건. /rss.xml은 정렬이 섞여 있어 /rss/news 사용"
+
+  - id: reuters_institute_research
+    name: Reuters Institute (Research)
+    group: media_global
+    type: rss
+    url: https://reutersinstitute.politics.ox.ac.uk/rss/research
+    enabled: true
+    default_category: MEDIA
+    max_items: 10
+    verified: "200 OK, 10건"
+
+  - id: wanifra
+    name: WAN-IFRA
+    group: media_global
+    type: rss
+    url: https://wan-ifra.org/feed/
+    enabled: true
+    default_category: MEDIA
+    max_items: 10
+    verified: "200 OK, 10건"
+
+  - id: poynter
+    name: Poynter
+    group: media_global
+    type: rss
+    url: https://www.poynter.org/feed/
+    enabled: true
+    default_category: MEDIA
+    max_items: 10
+    prefilter: true
+    verified: "200 OK, 10건 (일반 정치 기사도 섞여 있어 prefilter 적용)"
+
+  - id: pressgazette
+    name: Press Gazette
+    group: media_global
+    type: rss
+    url: https://pressgazette.co.uk/feed/
+    enabled: false
+    default_category: MEDIA
+    max_items: 15
+    verified: "403 Forbidden — 피드와 홈페이지 모두 자동 접근 차단(봇 방어). 우회하지 않음"
+
+  - id: digiday
+    name: Digiday
+    group: media_global
+    type: rss
+    url: https://digiday.com/feed/
+    enabled: true
+    default_category: MEDIA
+    max_items: 15
+    verified: "200 OK, 15건"
+
+  - id: journalismai
+    name: JournalismAI (Polis/LSE)
+    group: media_global
+    type: rss
+    url: https://www.journalismai.info/blog?format=rss
+    enabled: true
+    default_category: BOTH
+    max_items: 10
+    verified: "200 OK, 20건 (Squarespace 블로그 RSS). 발행 빈도 낮음"
+
+  # ───────────── C. 국내 AI·언론산업 ─────────────
+  - id: mediatoday
+    name: 미디어오늘
+    group: korea
+    type: rss
+    url: https://www.mediatoday.co.kr/rss/allArticle.xml
+    enabled: true
+    default_category: MEDIA
+    max_items: 50
+    prefilter: true
+    verified: "200 OK, 50건"
+
+  - id: journalist
+    name: 한국기자협회 / 기자협회보
+    group: korea
+    type: rss
+    url: https://www.journalist.or.kr/data/rss/news.xml
+    enabled: true
+    default_category: MEDIA
+    max_items: 25
+    verified: "200 OK, 25건 (홈페이지 <link>에서 확인)"
+
+  - id: kpf
+    name: 한국언론진흥재단 / 신문과방송
+    group: korea
+    type: rss
+    url: https://www.kpf.or.kr/
+    enabled: false
+    default_category: MEDIA
+    verified: "공개 RSS/API 확인 안 됨(/front/rss.do 404, 홈페이지에 피드 링크 없음). 월간지라 수동 확인 권장"
+
+  - id: kisdi
+    name: KISDI
+    group: korea
+    type: rss
+    url: https://www.kisdi.re.kr/
+    enabled: false
+    default_category: BOTH
+    verified: "공개 RSS 확인 안 됨(/rss/rss.do 404). 보고서 게시판은 이용약관 확인 후 추후 검토"
+
+  - id: etnews
+    name: 전자신문 (전체)
+    group: korea
+    type: rss
+    url: https://rss.etnews.com/Section901.xml
+    enabled: true
+    default_category: AI
+    max_items: 30
+    prefilter: true
+    verified: "200 OK, 30건"
+
+  - id: etnews_sw
+    name: 전자신문 (SW·AI 섹션)
+    group: korea
+    type: rss
+    url: https://rss.etnews.com/Section902.xml
+    enabled: true
+    default_category: AI
+    max_items: 30
+    prefilter: true
+    verified: "200 OK, 30건"
+
+  - id: geeknews
+    name: GeekNews (긱뉴스)
+    group: korea
+    type: rss
+    url: https://news.hada.io/rss/news
+    enabled: true
+    default_category: AI
+    max_items: 20
+    prefilter: true
+    verified: "200 OK, 20건 (국내 개발자 커뮤니티 뉴스, 바이브코딩·AI 도구 소개 많음)"
+
+  - id: zdnet_korea
+    name: ZDNet Korea
+    group: korea
+    type: rss
+    url: https://feeds.feedburner.com/zdkorea
+    enabled: true
+    default_category: AI
+    max_items: 30
+    prefilter: true
+    verified: "200 OK, 30건 (공식 Feedburner 피드)"
+
+  - id: ddaily
+    name: 디지털데일리
+    group: korea
+    type: rss
+    url: https://www.ddaily.co.kr/
+    enabled: false
+    default_category: AI
+    verified: "RSS 경로 확인 안 됨(/rss/allArticle.xml 등은 홈페이지로 리다이렉트, 피드 링크 없음)"
+
+  - id: bloter
+    name: 블로터
+    group: korea
+    type: rss
+    url: https://www.bloter.net/rss/allArticle.xml
+    enabled: true
+    default_category: AI
+    max_items: 50
+    prefilter: true
+    verified: "200 OK, 50건"
+
+  # 국내 AI 기업 공식 뉴스룸·기술블로그
+  - id: samsung_newsroom_kr
+    name: 삼성전자 뉴스룸
+    group: korea_company
+    type: rss
+    url: https://news.samsung.com/kr/feed
+    enabled: true
+    default_category: AI
+    max_items: 20
+    prefilter: true
+    verified: "200 OK, 20건"
+
+  - id: skt_newsroom
+    name: SK텔레콤 뉴스룸
+    group: korea_company
+    type: rss
+    url: https://news.sktelecom.com/feed
+    enabled: true
+    default_category: AI
+    max_items: 30
+    prefilter: true
+    verified: "200 OK, 30건"
+
+  - id: kakao_tech
+    name: 카카오 기술블로그
+    group: korea_company
+    type: rss
+    url: https://tech.kakao.com/feed/
+    enabled: true
+    default_category: AI
+    max_items: 10
+    prefilter: true
+    verified: "200 OK, 10건 (카카오 기업 뉴스룸 RSS는 없음)"
+
+  - id: naver_d2
+    name: NAVER D2
+    group: korea_company
+    type: rss
+    url: https://d2.naver.com/d2.atom
+    enabled: true
+    default_category: AI
+    max_items: 10
+    prefilter: true
+    verified: "200 OK, 20건 (네이버 기업 뉴스룸 RSS는 없음)"
+
+  - id: lg_ai_research
+    name: LG AI연구원
+    group: korea_company
+    type: rss
+    url: https://www.lgresearch.ai/
+    enabled: false
+    default_category: AI
+    verified: "공개 RSS 확인 안 됨"
+
+  - id: upstage
+    name: Upstage Blog
+    group: korea_company
+    type: rss
+    url: https://www.upstage.ai/blog
+    enabled: false
+    default_category: AI
+    verified: "공개 RSS 확인 안 됨(/blog/rss.xml 404)"
+
+  # ───────────── WIRED 독립 모니터 (group: wired) ─────────────
+  # 공식 안내: https://www.wired.com/about/rss-feeds/
+  - id: wired_ai
+    name: WIRED — Artificial Intelligence
+    group: wired
+    type: rss
+    url: https://www.wired.com/feed/tag/ai/latest/rss
+    enabled: true
+    default_category: AI
+    max_items: 20
+    verified: "200 OK, 10건"
+
+  - id: wired_business
+    name: WIRED — Business
+    group: wired
+    type: rss
+    url: https://www.wired.com/feed/category/business/latest/rss
+    enabled: true
+    default_category: BOTH
+    max_items: 20
+    prefilter: false
+    verified: "200 OK, 20건"
+
+  - id: wired_backchannel
+    name: WIRED — Backchannel
+    group: wired
+    type: rss
+    url: https://www.wired.com/feed/category/backchannel/latest/rss
+    enabled: true
+    default_category: BOTH
+    max_items: 20
+    prefilter: false
+    verified: "200 OK, 20건"
+
+  - id: wired_top
+    name: WIRED — Top Stories
+    group: wired
+    type: rss
+    url: https://www.wired.com/feed/rss
+    enabled: true
+    default_category: BOTH
+    max_items: 50
+    prefilter: false
+    verified: "200 OK, 50건 (리뷰·쇼핑·할인 글은 제목 규칙으로 제외, 나머지는 주요 이슈 후보)"

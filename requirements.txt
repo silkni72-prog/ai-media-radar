@@ -1,0 +1,12 @@
+feedparser>=6.0.11
+httpx>=0.27
+beautifulsoup4>=4.12
+pydantic>=2.7
+SQLAlchemy>=2.0
+PyYAML>=6.0
+python-dotenv>=1.0
+tzdata>=2024.1          # Windows에서 Asia/Seoul 시간대 데이터
+anthropic>=0.40         # LLM_PROVIDER=anthropic 일 때
+openai>=1.50            # LLM_PROVIDER=openai 일 때
+pytest>=8.0
+# PostgreSQL/Supabase로 옮길 때: psycopg[binary]>=3.1

@@ -1,0 +1,136 @@
+name: AI x MEDIA RADAR
+
+# GitHub Actions cron은 UTC 기준이다. KST = UTC + 9.
+#  - 정기 브리핑: 23:40 UTC(= 08:40 KST)에 깨어나 09:00 KST까지 기다렸다 실행.
+#                 예약이 늦거나 누락될 때를 대비해 00:10 UTC(= 09:10 KST)에 한 번 더 실행.
+#                 날짜별로 한 번만 발송되므로(DB 중복 방지) 두 번 실행돼도 안전하다.
+#  - WIRED: 30분 간격(매시 7분·37분). 정각은 GitHub 혼잡 시간이라 피한다.
+#  - 전체 수집: 1시간 간격(매시 23분).
+on:
+  schedule:
+    - cron: "40 23 * * *"   # briefing (08:40 KST → 09:00까지 대기)
+    - cron: "10 0 * * *"    # briefing fallback (09:10 KST)
+    - cron: "7,37 * * * *"  # wired
+    - cron: "23 * * * *"    # hourly
+  workflow_dispatch:
+    inputs:
+      task:
+        description: "실행할 작업"
+        type: choice
+        options: [hourly, wired, briefing, sources-check, notify-test-daily]
+        default: hourly
+
+# 모든 작업이 같은 SQLite DB를 쓰므로 한 번에 하나만 실행 (취소하지 않고 대기)
+concurrency:
+  group: radar-db
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      TZ: Asia/Seoul
+      LLM_PROVIDER: ${{ vars.LLM_PROVIDER || 'none' }}
+      LLM_MODEL: ${{ vars.LLM_MODEL }}
+      LLM_BRIEFING_MODEL: ${{ vars.LLM_BRIEFING_MODEL }}
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      NTFY_BASE_URL: ${{ vars.NTFY_BASE_URL || 'https://ntfy.sh' }}
+      NTFY_DAILY_TOPIC: ${{ secrets.NTFY_DAILY_TOPIC }}
+      NTFY_WIRED_TOPIC: ${{ secrets.NTFY_WIRED_TOPIC }}
+      NTFY_ALERT_TOPIC: ${{ secrets.NTFY_ALERT_TOPIC }}
+      NTFY_TOKEN: ${{ secrets.NTFY_TOKEN }}
+      # 실제 발송은 저장소 변수 NTFY_DRY_RUN=false를 직접 설정해야 켜진다
+      NTFY_DRY_RUN: ${{ vars.NTFY_DRY_RUN || 'true' }}
+      BRIEFING_PUBLIC_BASE_URL: ${{ vars.BRIEFING_PUBLIC_BASE_URL }}
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+    outputs:
+      task: ${{ steps.task.outputs.task }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 작업 결정
+        id: task
+        run: |
+          case "${{ github.event.schedule }}" in
+            "40 23 * * *"|"10 0 * * *") T=briefing ;;
+            "7,37 * * * *") T=wired ;;
+            "23 * * * *") T=hourly ;;
+            *) T="${{ github.event.inputs.task || 'hourly' }}" ;;
+          esac
+          echo "task=$T" >> "$GITHUB_OUTPUT"
+          echo "실행 작업: $T"
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - run: pip install -r requirements.txt
+
+      # DATABASE_URL이 없으면 SQLite 파일을 Actions 캐시로 이어 쓴다.
+      # 캐시는 7일 미사용 시 지워지고 덮어쓸 수 없으므로 실행마다 새 키로 저장하고 접두어로 복원한다.
+      - name: SQLite 복원
+        if: env.DATABASE_URL == ''
+        uses: actions/cache/restore@v4
+        with:
+          path: data/radar.db
+          key: radar-db-${{ github.run_id }}
+          restore-keys: radar-db-
+
+      - name: 실행
+        run: |
+          case "${{ steps.task.outputs.task }}" in
+            briefing)
+              if [ "${{ github.event.schedule }}" = "40 23 * * *" ]; then
+                python -m src.main briefing --wait-until 09:00
+              else
+                python -m src.main briefing
+              fi ;;
+            notify-test-daily) python -m src.main notify-test daily ;;
+            *) python -m src.main "${{ steps.task.outputs.task }}" ;;
+          esac
+
+      - name: SQLite 저장
+        if: always() && env.DATABASE_URL == ''
+        uses: actions/cache/save@v4
+        with:
+          path: data/radar.db
+          key: radar-db-${{ github.run_id }}
+
+      - name: 브리핑·로그 보관
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: radar-${{ steps.task.outputs.task }}-${{ github.run_id }}
+          path: |
+            output/*.md
+            output/*.html
+            data/logs/
+          retention-days: 14
+          if-no-files-found: ignore
+
+      - name: Pages 아티팩트
+        if: steps.task.outputs.task == 'briefing' && vars.PUBLISH_PAGES == 'true'
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: output
+
+  # 선택: 브리핑 HTML을 GitHub Pages로 공개해 푸시 클릭 시 열리게 한다.
+  # 저장소 변수 PUBLISH_PAGES=true와 Pages 설정(Source: GitHub Actions)이 필요하다.
+  # 공개 저장소의 Pages는 누구나 볼 수 있다는 점에 유의.
+  publish:
+    needs: run
+    if: needs.run.outputs.task == 'briefing' && vars.PUBLISH_PAGES == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+    steps:
+      - uses: actions/deploy-pages@v4

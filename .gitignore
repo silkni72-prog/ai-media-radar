@@ -1,0 +1,13 @@
+.env
+__pycache__/
+*.pyc
+.pytest_cache/
+data/*.db
+data/logs/
+output/*
+!output/.gitkeep
+# 비밀값이 든 .env 백업본 (예시 파일만 올린다)
+.env.*
+!.env.example
+# DB 백업본
+data/*.db*
