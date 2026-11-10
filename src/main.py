@@ -123,6 +123,8 @@ def cmd_briefing(args) -> int:
     date_kst = datetime.now(KST).strftime("%Y-%m-%d")
     if not args.force and not args.no_send and repo.notification_sent("daily", date_kst):
         log.info("%s 브리핑은 이미 발송됨 → 건너뜀 (--force로 재발송)", date_kst)
+        if args.else_run:  # 브리핑 대신 깨어난 예약 수집 실행: 원래 작업을 한다
+            return {"hourly": cmd_hourly, "wired": cmd_wired}[args.else_run](args)
         return 0
     if not args.skip_collect:
         run_hourly(repo, st, client, notifier)
@@ -186,6 +188,8 @@ def main(argv: list[str] | None = None) -> int:
     b.add_argument("--force", action="store_true", help="이미 보낸 날짜라도 다시 생성·발송")
     b.add_argument("--skip-collect", action="store_true", help="수집 없이 DB에 있는 기사로만 생성")
     b.add_argument("--wait-until", default="", help="HH:MM(KST)까지 대기 후 실행 (예약 실행이 일찍 깬 경우)")
+    b.add_argument("--else-run", choices=["hourly", "wired"], default="",
+                   help="오늘 브리핑이 이미 발송됐으면 대신 이 작업을 실행 (예약 누락 대비 보충 실행용)")
     b.set_defaults(fn=cmd_briefing)
     t = sub.add_parser("notify-test")
     t.add_argument("target", choices=["daily", "wired", "alert"])

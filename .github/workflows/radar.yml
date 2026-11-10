@@ -63,6 +63,15 @@ jobs:
             "23 * * * *") T=hourly ;;
             *) T="${{ github.event.inputs.task || 'hourly' }}" ;;
           esac
+          # GitHub 예약 실행은 자주 지연·누락된다(브리핑 예약 2개가 모두 빠진 날이 있었다).
+          # 09~13시 KST(00~04시 UTC)에 깨어난 예약 수집 실행은 오늘 브리핑이 아직 안 나갔으면 브리핑을 대신 보낸다.
+          # 이미 보냈으면 브리핑은 건너뛰고 원래 작업(hourly/wired)을 한다(--else-run).
+          ELSE=""
+          if [ "${{ github.event_name }}" = "schedule" ] && { [ "$T" = hourly ] || [ "$T" = wired ]; } \
+             && [ "$(date -u +%H)" -le 4 ]; then
+            ELSE="$T"; T=briefing
+          fi
+          echo "else=$ELSE" >> "$GITHUB_OUTPUT"
           echo "task=$T" >> "$GITHUB_OUTPUT"
           echo "실행 작업: $T"
 
@@ -89,6 +98,8 @@ jobs:
             briefing)
               if [ "${{ github.event.schedule }}" = "40 23 * * *" ]; then
                 python -m src.main briefing --wait-until 09:00
+              elif [ -n "${{ steps.task.outputs.else }}" ]; then
+                python -m src.main briefing --else-run "${{ steps.task.outputs.else }}"
               else
                 python -m src.main briefing
               fi ;;
